@@ -89,8 +89,9 @@ let DatabaseSeeder = DatabaseSeeder_1 = class DatabaseSeeder {
             return;
         }
         const tenantCount = await this.tenantRepository.count();
-        if (tenantCount > 0) {
-            this.logger.log('Database already has data. Skipping seed.');
+        const forceSeed = process.env.SEED_DATABASE_FORCE === 'true';
+        if (tenantCount > 0 && !forceSeed) {
+            this.logger.log('Database already has data. Skipping seed. Set SEED_DATABASE_FORCE=true to force.');
             return;
         }
         this.logger.log('Starting database seeding...');
