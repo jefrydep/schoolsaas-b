@@ -1,0 +1,11 @@
+export enum TenantType {
+  INSTITUCION = 'INSTITUCION',
+  UNIVERSIDAD = 'UNIVERSIDAD',
+  INSTITUTO = 'INSTITUTO',
+}
+
+export enum TenantLevel {
+  PRIMARIA = 'PRIMARIA',
+  SECUNDARIA = 'SECUNDARIA',
+  SUPERIOR = 'SUPERIOR',
+}

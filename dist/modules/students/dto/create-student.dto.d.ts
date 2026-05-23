@@ -1,0 +1,35 @@
+export declare class CreateStudentDto {
+    firstName: string;
+    lastName: string;
+    email?: string;
+    studentCode: string;
+    dateOfBirth?: string;
+    birthDistrict?: string;
+    birthProvince?: string;
+    birthDepartment?: string;
+    sex?: string;
+    nationality?: string;
+    documentType?: string;
+    documentNumber?: string;
+    cuiCode?: string;
+    address?: string;
+    phone?: string;
+    grade?: string;
+    section?: string;
+    academicYear?: string;
+    admissionType?: string;
+    previousSchool?: string;
+    enrollmentDate: string;
+    guardianName?: string;
+    guardianDocumentNumber?: string;
+    relationship?: string;
+    occupation?: string;
+    guardianPhone?: string;
+    guardianEmail?: string;
+    bloodType?: string;
+    allergies?: string;
+    diseases?: string;
+    disability?: string;
+    insurance?: string;
+    socioeconomicLevel?: string;
+}

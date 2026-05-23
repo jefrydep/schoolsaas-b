@@ -1,0 +1,37 @@
+import { BaseEntity } from '../../common/base/base.entity';
+export declare class Student extends BaseEntity {
+    firstName: string;
+    lastName: string;
+    email: string | null;
+    studentCode: string;
+    dateOfBirth: string | null;
+    birthDistrict: string | null;
+    birthProvince: string | null;
+    birthDepartment: string | null;
+    sex: string | null;
+    nationality: string | null;
+    documentType: string | null;
+    documentNumber: string | null;
+    cuiCode: string | null;
+    address: string | null;
+    phone: string | null;
+    grade: string | null;
+    section: string | null;
+    academicYear: string | null;
+    admissionType: string | null;
+    previousSchool: string | null;
+    enrollmentDate: string;
+    guardianName: string | null;
+    guardianDocumentNumber: string | null;
+    relationship: string | null;
+    occupation: string | null;
+    guardianPhone: string | null;
+    guardianEmail: string | null;
+    bloodType: string | null;
+    allergies: string | null;
+    diseases: string | null;
+    disability: string | null;
+    insurance: string | null;
+    socioeconomicLevel: string | null;
+    isActive: boolean;
+}
