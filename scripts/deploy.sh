@@ -10,7 +10,7 @@ rsync -avz --delete \
   --exclude 'node_modules' \
   --exclude '.git' \
   --exclude 'dist' \
-  ./ jefry@149.34.48.122:/var/www/schoolsaas-b/
+  ./ jefry@149.34.48.122:/var/www/schoolsaas-b
 
 echo "Installing dependencies on VPS..."
 ssh jefry@149.34.48.122 "cd /var/www/schoolsaas-b && npm ci && npm run build"
