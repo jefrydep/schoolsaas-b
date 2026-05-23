@@ -1,3 +1,4 @@
+import type { Response } from 'express';
 import { AuthService } from './auth.service';
 import { LoginDto } from './dto/login.dto';
 import { RegisterDto } from './dto/register.dto';
@@ -9,7 +10,7 @@ declare class VerifyPasswordDto {
 export declare class AuthController {
     private readonly authService;
     constructor(authService: AuthService);
-    login(dto: LoginDto): Promise<{
+    login(dto: LoginDto, res: Response): Promise<{
         accessToken: string;
         user: {
             id: any;
@@ -25,7 +26,7 @@ export declare class AuthController {
             } | null;
         };
     }>;
-    register(dto: RegisterDto): Promise<{
+    register(dto: RegisterDto, res: Response): Promise<{
         accessToken: string;
         user: {
             id: any;
@@ -50,5 +51,6 @@ export declare class AuthController {
     verifyPassword(req: any, dto: VerifyPasswordDto): Promise<{
         valid: boolean;
     }>;
+    logout(res: Response): Response<any, Record<string, any>>;
 }
 export {};

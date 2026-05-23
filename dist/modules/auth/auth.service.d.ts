@@ -1,6 +1,7 @@
 import { OnModuleInit } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { Repository } from 'typeorm';
+import { Response } from 'express';
 import { UsersService } from '../users/users.service';
 import { TenantsService } from '../tenants/tenants.service';
 import { LoginDto } from './dto/login.dto';
@@ -26,7 +27,7 @@ export declare class AuthService implements OnModuleInit {
     private readonly emailService;
     constructor(usersService: UsersService, tenantsService: TenantsService, jwtService: JwtService, superAdminsService: SuperAdminsService, passwordResetTokenRepository: Repository<PasswordResetToken>, emailService: EmailService);
     onModuleInit(): Promise<void>;
-    login(dto: LoginDto): Promise<{
+    login(dto: LoginDto, res: Response): Promise<{
         accessToken: string;
         user: {
             id: any;
@@ -42,7 +43,7 @@ export declare class AuthService implements OnModuleInit {
             } | null;
         };
     }>;
-    register(dto: RegisterDto): Promise<{
+    register(dto: RegisterDto, res: Response): Promise<{
         accessToken: string;
         user: {
             id: any;

@@ -10,6 +10,7 @@ import { Repository } from 'typeorm';
 import { IsNull } from 'typeorm';
 import * as bcrypt from 'bcrypt';
 import * as crypto from 'crypto';
+import { Response } from 'express';
 import { UsersService } from '../users/users.service';
 import { TenantsService } from '../tenants/tenants.service';
 import { CreateUserDto } from '../users/dto/create-user.dto';
@@ -46,7 +47,7 @@ export class AuthService implements OnModuleInit {
     await this.superAdminsService.seedIfNotExists();
   }
 
-  async login(dto: LoginDto) {
+  async login(dto: LoginDto, res: Response) {
     const superAdmin = await this.superAdminsService.findByEmailWithPassword(
       dto.email,
     );
@@ -64,13 +65,22 @@ export class AuthService implements OnModuleInit {
         throw new UnauthorizedException('Account is disabled');
       }
 
+      const token = this.jwtService.sign({
+        sub: superAdmin.id,
+        email: superAdmin.email,
+        role: Role.SUPER_ADMIN,
+        tenantId: null,
+      });
+
+      res.cookie('access_token', token, {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === 'production',
+        sameSite: 'lax',
+        maxAge: 24 * 60 * 60 * 1000,
+      });
+
       return {
-        accessToken: this.jwtService.sign({
-          sub: superAdmin.id,
-          email: superAdmin.email,
-          role: Role.SUPER_ADMIN,
-          tenantId: null,
-        }),
+        accessToken: token,
         user: {
           id: superAdmin.id,
           email: superAdmin.email,
@@ -104,10 +114,10 @@ export class AuthService implements OnModuleInit {
       throw new UnauthorizedException('Account is disabled');
     }
 
-    return this.generateAuthResponse(user);
+    return this.generateAuthResponse(user, res);
   }
 
-  async register(dto: RegisterDto) {
+  async register(dto: RegisterDto, res: Response) {
     const tenant = await this.tenantsService.findBySubdomain('default');
 
     if (!tenant) {
@@ -121,7 +131,7 @@ export class AuthService implements OnModuleInit {
           lastName: dto.lastName,
         },
       });
-      return this.generateAuthResponse(result.admin);
+      return this.generateAuthResponse(result.admin, res);
     }
 
     const createUserDto: CreateUserDto = {
@@ -134,7 +144,7 @@ export class AuthService implements OnModuleInit {
     };
 
     const user = await this.usersService.createWithTenant(createUserDto);
-    return this.generateAuthResponse(user);
+    return this.generateAuthResponse(user, res);
   }
 
   async forgotPassword(dto: ForgotPasswordDto) {
@@ -235,7 +245,7 @@ export class AuthService implements OnModuleInit {
     return { valid: true };
   }
 
-  private async generateAuthResponse(user: any) {
+  private async generateAuthResponse(user: any, res: Response) {
     const payload: JwtPayload = {
       sub: user.id,
       email: user.email,
@@ -248,8 +258,17 @@ export class AuthService implements OnModuleInit {
       tenant = await this.tenantsService.findOne(user.tenantId);
     }
 
+    const token = this.jwtService.sign(payload);
+
+    res.cookie('access_token', token, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'lax',
+      maxAge: 24 * 60 * 60 * 1000,
+    });
+
     return {
-      accessToken: this.jwtService.sign(payload),
+      accessToken: token,
       user: {
         id: user.id,
         email: user.email,

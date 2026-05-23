@@ -78,7 +78,7 @@ let AuthService = class AuthService {
     async onModuleInit() {
         await this.superAdminsService.seedIfNotExists();
     }
-    async login(dto) {
+    async login(dto, res) {
         const superAdmin = await this.superAdminsService.findByEmailWithPassword(dto.email);
         if (superAdmin) {
             const isPasswordValid = await bcrypt.compare(dto.password, superAdmin.passwordHash);
@@ -88,13 +88,20 @@ let AuthService = class AuthService {
             if (!superAdmin.isActive) {
                 throw new common_1.UnauthorizedException('Account is disabled');
             }
+            const token = this.jwtService.sign({
+                sub: superAdmin.id,
+                email: superAdmin.email,
+                role: role_enum_1.Role.SUPER_ADMIN,
+                tenantId: null,
+            });
+            res.cookie('access_token', token, {
+                httpOnly: true,
+                secure: process.env.NODE_ENV === 'production',
+                sameSite: 'lax',
+                maxAge: 24 * 60 * 60 * 1000,
+            });
             return {
-                accessToken: this.jwtService.sign({
-                    sub: superAdmin.id,
-                    email: superAdmin.email,
-                    role: role_enum_1.Role.SUPER_ADMIN,
-                    tenantId: null,
-                }),
+                accessToken: token,
                 user: {
                     id: superAdmin.id,
                     email: superAdmin.email,
@@ -118,9 +125,9 @@ let AuthService = class AuthService {
         if (!user.isActive) {
             throw new common_1.UnauthorizedException('Account is disabled');
         }
-        return this.generateAuthResponse(user);
+        return this.generateAuthResponse(user, res);
     }
-    async register(dto) {
+    async register(dto, res) {
         const tenant = await this.tenantsService.findBySubdomain('default');
         if (!tenant) {
             const result = await this.tenantsService.create({
@@ -133,7 +140,7 @@ let AuthService = class AuthService {
                     lastName: dto.lastName,
                 },
             });
-            return this.generateAuthResponse(result.admin);
+            return this.generateAuthResponse(result.admin, res);
         }
         const createUserDto = {
             email: dto.email,
@@ -144,7 +151,7 @@ let AuthService = class AuthService {
             tenantId: tenant.id,
         };
         const user = await this.usersService.createWithTenant(createUserDto);
-        return this.generateAuthResponse(user);
+        return this.generateAuthResponse(user, res);
     }
     async forgotPassword(dto) {
         let userType = null;
@@ -221,7 +228,7 @@ let AuthService = class AuthService {
         }
         return { valid: true };
     }
-    async generateAuthResponse(user) {
+    async generateAuthResponse(user, res) {
         const payload = {
             sub: user.id,
             email: user.email,
@@ -232,8 +239,15 @@ let AuthService = class AuthService {
         if (user.tenantId) {
             tenant = await this.tenantsService.findOne(user.tenantId);
         }
+        const token = this.jwtService.sign(payload);
+        res.cookie('access_token', token, {
+            httpOnly: true,
+            secure: process.env.NODE_ENV === 'production',
+            sameSite: 'lax',
+            maxAge: 24 * 60 * 60 * 1000,
+        });
         return {
-            accessToken: this.jwtService.sign(payload),
+            accessToken: token,
             user: {
                 id: user.id,
                 email: user.email,

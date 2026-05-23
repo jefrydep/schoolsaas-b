@@ -37,11 +37,11 @@ let AuthController = class AuthController {
     constructor(authService) {
         this.authService = authService;
     }
-    login(dto) {
-        return this.authService.login(dto);
+    login(dto, res) {
+        return this.authService.login(dto, res);
     }
-    register(dto) {
-        return this.authService.register(dto);
+    register(dto, res) {
+        return this.authService.register(dto, res);
     }
     forgotPassword(dto) {
         return this.authService.forgotPassword(dto);
@@ -52,6 +52,10 @@ let AuthController = class AuthController {
     async verifyPassword(req, dto) {
         return this.authService.verifySuperAdminPassword(req.user.id, dto.password);
     }
+    logout(res) {
+        res.clearCookie('access_token');
+        return res.json({ message: 'Logged out successfully' });
+    }
 };
 exports.AuthController = AuthController;
 __decorate([
@@ -59,7 +63,7 @@ __decorate([
     (0, public_decorator_1.Public)(),
     (0, swagger_1.ApiOperation)({
         summary: 'Iniciar sesión',
-        description: 'Autentica un usuario. Acepta tanto SuperAdmin como usuarios de tenant.',
+        description: 'Autentica un usuario. Acepta tanto SuperAdmin como usuarios de tenant. Retorna token en cookie HttpOnly y en cuerpo de respuesta.',
     }),
     (0, swagger_1.ApiResponse)({
         status: 200,
@@ -77,11 +81,18 @@ __decorate([
                 },
             },
         },
+        headers: {
+            'Set-Cookie': {
+                description: 'Cookie HttpOnly con el token de acceso',
+                example: 'access_token=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...; HttpOnly; Path=/; Max-Age=86400',
+            },
+        },
     }),
     (0, swagger_1.ApiResponse)({ status: 401, description: 'Credenciales inválidas' }),
     __param(0, (0, common_1.Body)()),
+    __param(1, (0, common_1.Res)()),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [login_dto_1.LoginDto]),
+    __metadata("design:paramtypes", [login_dto_1.LoginDto, Object]),
     __metadata("design:returntype", void 0)
 ], AuthController.prototype, "login", null);
 __decorate([
@@ -89,16 +100,36 @@ __decorate([
     (0, public_decorator_1.Public)(),
     (0, swagger_1.ApiOperation)({
         summary: 'Registrar usuario',
-        description: 'Registra un nuevo usuario dentro del tenant por defecto.',
+        description: 'Registra un nuevo usuario dentro del tenant por defecto. Retorna token en cookie HttpOnly y en cuerpo de respuesta.',
     }),
     (0, swagger_1.ApiResponse)({
         status: 201,
         description: 'Usuario registrado exitosamente',
+        schema: {
+            example: {
+                accessToken: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...',
+                user: {
+                    id: 'uuid-del-usuario',
+                    email: 'usuario@ejemplo.com',
+                    firstName: 'Juan',
+                    lastName: 'Pérez',
+                    role: 'ADMIN',
+                    tenantId: 'uuid-del-tenant',
+                },
+            },
+        },
+        headers: {
+            'Set-Cookie': {
+                description: 'Cookie HttpOnly con el token de acceso',
+                example: 'access_token=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...; HttpOnly; Path=/; Max-Age=86400',
+            },
+        },
     }),
     (0, swagger_1.ApiResponse)({ status: 409, description: 'El email ya está registrado' }),
     __param(0, (0, common_1.Body)()),
+    __param(1, (0, common_1.Res)()),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [register_dto_1.RegisterDto]),
+    __metadata("design:paramtypes", [register_dto_1.RegisterDto, Object]),
     __metadata("design:returntype", void 0)
 ], AuthController.prototype, "register", null);
 __decorate([
@@ -160,6 +191,16 @@ __decorate([
     __metadata("design:paramtypes", [Object, VerifyPasswordDto]),
     __metadata("design:returntype", Promise)
 ], AuthController.prototype, "verifyPassword", null);
+__decorate([
+    (0, common_1.Post)('logout'),
+    (0, common_1.UseGuards)(jwt_auth_guard_1.JwtAuthGuard),
+    (0, swagger_1.ApiOperation)({ summary: 'Cerrar sesión', description: 'Elimina la cookie de autenticación.' }),
+    (0, swagger_1.ApiResponse)({ status: 200, description: 'Sesión cerrada exitosamente' }),
+    __param(0, (0, common_1.Res)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object]),
+    __metadata("design:returntype", void 0)
+], AuthController.prototype, "logout", null);
 exports.AuthController = AuthController = __decorate([
     (0, swagger_1.ApiTags)('Autenticación'),
     (0, common_1.Controller)('auth'),

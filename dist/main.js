@@ -13,8 +13,8 @@ async function bootstrap() {
         credentials: true,
     });
     const config = new swagger_1.DocumentBuilder()
-        .setTitle('VibeCoding API')
-        .setDescription('API documentation for the VibeCoding backend')
+        .setTitle('School Saas Api')
+        .setDescription('API documentation for the School backend')
         .setVersion('1.0')
         .addBearerAuth()
         .build();
