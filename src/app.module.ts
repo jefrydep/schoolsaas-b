@@ -19,6 +19,7 @@ import { EvaluationsModule } from './modules/evaluations/evaluations.module';
 import { GradesModule } from './modules/grades/grades.module';
 import { StatsModule } from './modules/stats/stats.module';
 import { AdminsModule } from './modules/admins/admins.module';
+import { DatabaseModule } from './database/database.module';
 
 @Module({
   imports: [
@@ -39,6 +40,7 @@ import { AdminsModule } from './modules/admins/admins.module';
     GradesModule,
     StatsModule,
     AdminsModule,
+    DatabaseModule,
   ],
   providers: [
     {

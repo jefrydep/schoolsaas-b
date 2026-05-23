@@ -1,0 +1,34 @@
+import { OnModuleInit } from '@nestjs/common';
+import { Repository, DataSource } from 'typeorm';
+import { Tenant } from '../../modules/tenants/tenant.entity';
+import { User } from '../../modules/users/user.entity';
+import { Teacher } from '../../modules/teachers/teacher.entity';
+import { Student } from '../../modules/students/student.entity';
+import { Course } from '../../modules/courses/course.entity';
+import { Evaluation } from '../../modules/evaluations/evaluation.entity';
+import { Grade } from '../../modules/grades/grade.entity';
+import { CourseStudent } from '../../modules/courses/course-student.entity';
+export declare class DatabaseSeeder implements OnModuleInit {
+    private readonly dataSource;
+    private readonly tenantRepository;
+    private readonly userRepository;
+    private readonly teacherRepository;
+    private readonly studentRepository;
+    private readonly courseRepository;
+    private readonly evaluationRepository;
+    private readonly gradeRepository;
+    private readonly courseStudentRepository;
+    private readonly logger;
+    constructor(dataSource: DataSource, tenantRepository: Repository<Tenant>, userRepository: Repository<User>, teacherRepository: Repository<Teacher>, studentRepository: Repository<Student>, courseRepository: Repository<Course>, evaluationRepository: Repository<Evaluation>, gradeRepository: Repository<Grade>, courseStudentRepository: Repository<CourseStudent>);
+    onModuleInit(): Promise<void>;
+    seed(): Promise<void>;
+    private createTenants;
+    private createUsers;
+    private createTeachers;
+    private createStudents;
+    private createCourses;
+    private createEvaluations;
+    private createCourseStudents;
+    private createGrades;
+    private logSummary;
+}

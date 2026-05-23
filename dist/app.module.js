@@ -26,6 +26,7 @@ const evaluations_module_1 = require("./modules/evaluations/evaluations.module")
 const grades_module_1 = require("./modules/grades/grades.module");
 const stats_module_1 = require("./modules/stats/stats.module");
 const admins_module_1 = require("./modules/admins/admins.module");
+const database_module_1 = require("./database/database.module");
 let AppModule = class AppModule {
 };
 exports.AppModule = AppModule;
@@ -49,6 +50,7 @@ exports.AppModule = AppModule = __decorate([
             grades_module_1.GradesModule,
             stats_module_1.StatsModule,
             admins_module_1.AdminsModule,
+            database_module_1.DatabaseModule,
         ],
         providers: [
             {
