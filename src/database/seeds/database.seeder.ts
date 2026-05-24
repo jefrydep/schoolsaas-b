@@ -10,11 +10,12 @@ import { Course } from '../../modules/courses/course.entity';
 import { Evaluation } from '../../modules/evaluations/evaluation.entity';
 import { Grade } from '../../modules/grades/grade.entity';
 import { CourseStudent } from '../../modules/courses/course-student.entity';
-import { seedData } from './data';
+import { generateSeedData } from './data';
 
 @Injectable()
 export class DatabaseSeeder implements OnModuleInit {
   private readonly logger = new Logger(DatabaseSeeder.name);
+  private seedData!: ReturnType<typeof generateSeedData>;
 
   constructor(
     private readonly dataSource: DataSource,
@@ -51,6 +52,7 @@ export class DatabaseSeeder implements OnModuleInit {
       return;
     }
 
+    this.seedData = generateSeedData();
     this.logger.log('Starting database seeding...');
     await this.seed();
     this.logger.log('Database seeding completed!');
@@ -62,14 +64,14 @@ export class DatabaseSeeder implements OnModuleInit {
     await queryRunner.startTransaction();
 
     try {
-      const tenants = await this.createTenants(queryRunner);
-      const users = await this.createUsers(queryRunner, tenants);
-      const teachers = await this.createTeachers(queryRunner, tenants);
-      const students = await this.createStudents(queryRunner, tenants);
-      const courses = await this.createCourses(queryRunner, tenants, teachers);
-      const evaluations = await this.createEvaluations(queryRunner, courses);
-      const courseStudents = await this.createCourseStudents(queryRunner, tenants, courses, students);
-      await this.createGrades(queryRunner, tenants, evaluations, students);
+      await this.createTenants(queryRunner);
+      await this.createUsers(queryRunner);
+      await this.createTeachers(queryRunner);
+      await this.createStudents(queryRunner);
+      await this.createCourses(queryRunner);
+      await this.createEvaluations(queryRunner);
+      await this.createCourseStudents(queryRunner);
+      await this.createGrades(queryRunner);
 
       await queryRunner.commitTransaction();
       this.logSummary();
@@ -84,20 +86,23 @@ export class DatabaseSeeder implements OnModuleInit {
 
   private async createTenants(queryRunner: any): Promise<Tenant[]> {
     const tenants: Tenant[] = [];
-    for (const tenantData of seedData.tenants) {
+    for (const tenantData of this.seedData.tenants) {
       const tenant = this.tenantRepository.create(tenantData);
       const savedTenant = await queryRunner.manager.save(tenant);
       tenants.push(savedTenant);
-      this.logger.debug(`Created tenant: ${savedTenant.name}`);
     }
+    this.logger.log(`Created ${tenants.length} tenants`);
     return tenants;
   }
 
-  private async createUsers(queryRunner: any, tenants: Tenant[]): Promise<User[]> {
+  private async createUsers(queryRunner: any): Promise<User[]> {
     const users: User[] = [];
-    for (let i = 0; i < seedData.users.length; i++) {
-      const userData = seedData.users[i];
-      const tenant = tenants[i % tenants.length];
+    const tenants = await this.tenantRepository.find();
+
+    for (const userData of this.seedData.users) {
+      const tenant = tenants[userData.tenantIndex];
+      if (!tenant) continue;
+
       const passwordHash = await bcrypt.hash(userData.password, 10);
       const user = this.userRepository.create({
         ...userData,
@@ -106,73 +111,81 @@ export class DatabaseSeeder implements OnModuleInit {
       });
       const savedUser = await queryRunner.manager.save(user);
       users.push(savedUser);
-      this.logger.debug(`Created user: ${savedUser.email}`);
     }
+    this.logger.log(`Created ${users.length} users`);
     return users;
   }
 
-  private async createTeachers(queryRunner: any, tenants: Tenant[]): Promise<Teacher[]> {
+  private async createTeachers(queryRunner: any): Promise<Teacher[]> {
     const teachers: Teacher[] = [];
-    for (let i = 0; i < seedData.teachers.length; i++) {
-      const teacherData = seedData.teachers[i];
-      const tenant = tenants[i % tenants.length];
+    const tenants = await this.tenantRepository.find();
+
+    for (const teacherData of this.seedData.teachers) {
+      const tenant = tenants[teacherData.tenantIndex];
+      if (!tenant) continue;
+
       const teacher = this.teacherRepository.create({
         ...teacherData,
         tenantId: tenant.id,
       });
       const savedTeacher = await queryRunner.manager.save(teacher);
       teachers.push(savedTeacher);
-      this.logger.debug(`Created teacher: ${savedTeacher.firstName} ${savedTeacher.lastName}`);
     }
+    this.logger.log(`Created ${teachers.length} teachers`);
     return teachers;
   }
 
-  private async createStudents(queryRunner: any, tenants: Tenant[]): Promise<Student[]> {
+  private async createStudents(queryRunner: any): Promise<Student[]> {
     const students: Student[] = [];
-    for (let i = 0; i < seedData.students.length; i++) {
-      const studentData = seedData.students[i];
-      const tenant = tenants[i % tenants.length];
+    const tenants = await this.tenantRepository.find();
+
+    for (const studentData of this.seedData.students) {
+      const tenant = tenants[studentData.tenantIndex];
+      if (!tenant) continue;
+
       const student = this.studentRepository.create({
         ...studentData,
         tenantId: tenant.id,
       });
       const savedStudent = await queryRunner.manager.save(student);
       students.push(savedStudent);
-      this.logger.debug(`Created student: ${savedStudent.firstName} ${savedStudent.lastName}`);
     }
+    this.logger.log(`Created ${students.length} students`);
     return students;
   }
 
-  private async createCourses(
-    queryRunner: any,
-    tenants: Tenant[],
-    teachers: Teacher[]
-  ): Promise<Course[]> {
+  private async createCourses(queryRunner: any): Promise<Course[]> {
     const courses: Course[] = [];
-    for (let i = 0; i < seedData.courses.length; i++) {
-      const courseData = seedData.courses[i];
-      const tenant = tenants[i % tenants.length];
-      const teacher = teachers[i] || null;
+    const tenants = await this.tenantRepository.find();
+    const teachers = await this.teacherRepository.find();
+
+    for (const courseData of this.seedData.courses) {
+      const tenant = tenants[courseData.tenantIndex];
+      if (!tenant) continue;
+
+      const teacher = teachers[courseData.teacherIndex];
+      if (!teacher) continue;
+
       const course = this.courseRepository.create({
         ...courseData,
         tenantId: tenant.id,
-        teacherId: teacher?.id || null,
+        teacherId: teacher.id,
       });
       const savedCourse = await queryRunner.manager.save(course);
       courses.push(savedCourse);
-      this.logger.debug(`Created course: ${savedCourse.name}`);
     }
+    this.logger.log(`Created ${courses.length} courses`);
     return courses;
   }
 
-  private async createEvaluations(
-    queryRunner: any,
-    courses: Course[]
-  ): Promise<Evaluation[]> {
+  private async createEvaluations(queryRunner: any): Promise<Evaluation[]> {
     const evaluations: Evaluation[] = [];
-    for (let i = 0; i < seedData.evaluations.length; i++) {
-      const evalData = seedData.evaluations[i];
-      const course = courses[i % courses.length];
+    const courses = await this.courseRepository.find();
+
+    for (const evalData of this.seedData.evaluations) {
+      const course = courses[evalData.courseIndex];
+      if (!course) continue;
+
       const evaluation = this.evaluationRepository.create({
         ...evalData,
         courseId: course.id,
@@ -180,71 +193,67 @@ export class DatabaseSeeder implements OnModuleInit {
       });
       const savedEval = await queryRunner.manager.save(evaluation);
       evaluations.push(savedEval);
-      this.logger.debug(`Created evaluation: ${savedEval.name}`);
     }
+    this.logger.log(`Created ${evaluations.length} evaluations`);
     return evaluations;
   }
 
-  private async createCourseStudents(
-    queryRunner: any,
-    tenants: Tenant[],
-    courses: Course[],
-    students: Student[]
-  ): Promise<CourseStudent[]> {
+  private async createCourseStudents(queryRunner: any): Promise<CourseStudent[]> {
     const courseStudents: CourseStudent[] = [];
-    for (let i = 0; i < seedData.courseStudents.length; i++) {
-      const courseStudentData = seedData.courseStudents[i];
-      const tenant = tenants[i % tenants.length];
-      const course = courses[i % courses.length];
-      const student = students[i % students.length];
+    const courses = await this.courseRepository.find();
+    const students = await this.studentRepository.find();
+
+    for (const csData of this.seedData.courseStudents) {
+      const course = courses[csData.courseIndex];
+      const student = students[csData.studentIndex];
+      if (!course || !student) continue;
+
       const courseStudent = this.courseStudentRepository.create({
-        ...courseStudentData,
+        ...csData,
         courseId: course.id,
         studentId: student.id,
-        tenantId: tenant.id,
+        tenantId: course.tenantId,
       });
       const saved = await queryRunner.manager.save(courseStudent);
       courseStudents.push(saved);
-      this.logger.debug(`Enrolled student ${student.firstName} in course ${course.name}`);
     }
+    this.logger.log(`Created ${courseStudents.length} enrollments`);
     return courseStudents;
   }
 
-  private async createGrades(
-    queryRunner: any,
-    tenants: Tenant[],
-    evaluations: Evaluation[],
-    students: Student[]
-  ): Promise<Grade[]> {
+  private async createGrades(queryRunner: any): Promise<Grade[]> {
     const grades: Grade[] = [];
-    for (let i = 0; i < seedData.grades.length; i++) {
-      const gradeData = seedData.grades[i];
-      const tenant = tenants[i % tenants.length];
-      const evaluation = evaluations[i % evaluations.length];
-      const student = students[i % students.length];
+    const students = await this.studentRepository.find();
+    const evaluations = await this.evaluationRepository.find();
+
+    for (const gradeData of this.seedData.grades) {
+      const student = students[gradeData.studentIndex];
+      const evaluation = evaluations[gradeData.evaluationIndex];
+      if (!student || !evaluation) continue;
+
       const grade = this.gradeRepository.create({
         ...gradeData,
-        evaluationId: evaluation.id,
         studentId: student.id,
-        tenantId: tenant.id,
+        evaluationId: evaluation.id,
+        tenantId: student.tenantId,
       });
       const savedGrade = await queryRunner.manager.save(grade);
       grades.push(savedGrade);
-      this.logger.debug(`Created grade: ${savedGrade.score} for student ${student.firstName}`);
     }
+    this.logger.log(`Created ${grades.length} grades`);
     return grades;
   }
 
   private logSummary() {
     this.logger.log('=== Seed Summary ===');
-    this.logger.log(`Tenants: ${seedData.tenants.length}`);
-    this.logger.log(`Users: ${seedData.users.length}`);
-    this.logger.log(`Teachers: ${seedData.teachers.length}`);
-    this.logger.log(`Students: ${seedData.students.length}`);
-    this.logger.log(`Courses: ${seedData.courses.length}`);
-    this.logger.log(`Evaluations: ${seedData.evaluations.length}`);
-    this.logger.log(`Enrollments: ${seedData.courseStudents.length}`);
-    this.logger.log(`Grades: ${seedData.grades.length}`);
+    this.logger.log(`Tenants: ${this.seedData.tenants.length}`);
+    this.logger.log(`Users: ${this.seedData.users.length}`);
+    this.logger.log(`Teachers: ${this.seedData.teachers.length}`);
+    this.logger.log(`Students: ${this.seedData.students.length}`);
+    this.logger.log(`Courses: ${this.seedData.courses.length}`);
+    this.logger.log(`Evaluations: ${this.seedData.evaluations.length}`);
+    this.logger.log(`Enrollments: ${this.seedData.courseStudents.length}`);
+    this.logger.log(`Grades: ${this.seedData.grades.length}`);
     this.logger.log('====================');
   }
 }

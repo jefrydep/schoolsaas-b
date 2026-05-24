@@ -19,6 +19,7 @@ export declare class DatabaseSeeder implements OnModuleInit {
     private readonly gradeRepository;
     private readonly courseStudentRepository;
     private readonly logger;
+    private seedData;
     constructor(dataSource: DataSource, tenantRepository: Repository<Tenant>, userRepository: Repository<User>, teacherRepository: Repository<Teacher>, studentRepository: Repository<Student>, courseRepository: Repository<Course>, evaluationRepository: Repository<Evaluation>, gradeRepository: Repository<Grade>, courseStudentRepository: Repository<CourseStudent>);
     onModuleInit(): Promise<void>;
     seed(): Promise<void>;
