@@ -64,6 +64,11 @@ export class DatabaseSeeder implements OnModuleInit {
     await queryRunner.startTransaction();
 
     try {
+      if (process.env.SEED_DATABASE_FORCE === 'true') {
+        this.logger.log('Force seed enabled - clearing existing data...');
+        await this.clearAllTables(queryRunner);
+      }
+
       await this.createTenants(queryRunner);
       await this.createUsers(queryRunner);
       await this.createTeachers(queryRunner);
@@ -82,6 +87,20 @@ export class DatabaseSeeder implements OnModuleInit {
     } finally {
       await queryRunner.release();
     }
+  }
+
+  private async clearAllTables(queryRunner: any): Promise<void> {
+    await queryRunner.query('SET FOREIGN_KEY_CHECKS = 0');
+    await queryRunner.query('TRUNCATE TABLE grades CASCADE');
+    await queryRunner.query('TRUNCATE TABLE course_students CASCADE');
+    await queryRunner.query('TRUNCATE TABLE evaluations CASCADE');
+    await queryRunner.query('TRUNCATE TABLE courses CASCADE');
+    await queryRunner.query('TRUNCATE TABLE students CASCADE');
+    await queryRunner.query('TRUNCATE TABLE teachers CASCADE');
+    await queryRunner.query('TRUNCATE TABLE users CASCADE');
+    await queryRunner.query('TRUNCATE TABLE tenants CASCADE');
+    await queryRunner.query('SET FOREIGN_KEY_CHECKS = 1');
+    this.logger.log('All tables cleared.');
   }
 
   private async createTenants(queryRunner: any): Promise<Tenant[]> {
