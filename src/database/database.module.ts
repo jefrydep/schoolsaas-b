@@ -9,6 +9,7 @@ import { Course } from '../modules/courses/course.entity';
 import { Evaluation } from '../modules/evaluations/evaluation.entity';
 import { Grade } from '../modules/grades/grade.entity';
 import { CourseStudent } from '../modules/courses/course-student.entity';
+import { SuperAdmin } from '../modules/auth/super-admin.entity';
 
 @Module({
   imports: [
@@ -21,6 +22,7 @@ import { CourseStudent } from '../modules/courses/course-student.entity';
       Evaluation,
       Grade,
       CourseStudent,
+      SuperAdmin,
     ]),
   ],
   providers: [DatabaseSeeder],
